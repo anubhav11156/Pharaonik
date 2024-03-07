@@ -25,7 +25,6 @@ mod Trove {
         self.trove_owner.write(trove_owner);
     }
 
-
     #[abi(embed_v0)]
     pub impl Trove of ITrove<ContractState> {
         fn deposit(ref self: ContractState, amount: u256) {}
