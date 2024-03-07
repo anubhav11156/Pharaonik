@@ -1,19 +1,23 @@
 mod excercises {
-    mod exercise0 {
+    mod excercise0 {
         mod phish_forge {
-            mod Trove;
+            mod trove;
         }
     }
+// mod exercise1 {}
 
-    mod exercise1 {}
-
-    mod exercise2 {}
+// mod exercise2 {}
 }
 
 mod interfaces {
-    mod ITrove;
+    pub mod ITrove;
+}
+// mod mocks {}
+
+// mod setup {}
+
+mod utils {
+    pub mod errors;
 }
 
-mod mocks {}
 
-mod setup {}
