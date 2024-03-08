@@ -11,13 +11,20 @@ mod excercises {
 
 mod interfaces {
     pub mod ITrove;
+    pub mod IERC20Camel;
+    pub mod IStarknetETHBridge;
 }
-// mod mocks {}
+mod mocks {
+    pub mod starknet_eth_bridge;
+    pub mod erc20_camel;
+}
 
-// mod setup {}
+mod setup {
+    mod setup;
+}
 
 mod utils {
     pub mod errors;
+    pub mod constants;
 }
-
 
