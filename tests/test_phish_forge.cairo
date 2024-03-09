@@ -1,5 +1,5 @@
 #[cfg(test)]
-mod tests {
+mod TestPhishForge {
     use core::debug::PrintTrait;
     use core::result::ResultTrait;
     use core::option::OptionTrait;
@@ -25,21 +25,22 @@ mod tests {
     #[test]
     #[feature("safe_dispatcher")]
     fn test_exploit() {
+        // Alice deposit action
         let (wETH_address, trove_address) = setup_phish_forge();
         let wETH = IERC20CamelSafeDispatcher { contract_address: wETH_address };
         let Trove = ITroveSafeDispatcher { contract_address: trove_address };
         let alice = Constants::alice();
         let deposit_amount: u256 = 5000000000000000000; // 5 ETH
-
         start_prank(CheatTarget::One(wETH_address), alice);
         let success = wETH.approve(trove_address, deposit_amount).unwrap();
         assert(success, Errors::APPROVAL_FAILED);
         stop_prank(CheatTarget::One(wETH_address));
-
         start_prank(CheatTarget::One(trove_address), alice);
         Trove.deposit(deposit_amount, alice).unwrap();
         stop_prank(CheatTarget::One(trove_address));
 
+        // Attack setup
+        // Objective : Phish alice to interact with attack contract and steal all her deposited ETH
         let attacker = Constants::attacker();
         let mut call_data = ArrayTrait::new();
         call_data.append(contract_address_to_felt252(trove_address));
@@ -48,11 +49,10 @@ mod tests {
         let attack_contract_address: ContractAddress = deploy_contract(
             attack_contract_class, call_data
         );
+        let Attack = IAttackSafeDispatcher { contract_address: attack_contract_address };
 
         let mut mock_tx_info = TxInfoMockTrait::default();
-        mock_tx_info.account_contract_address = Option::Some(alice);
-
-        let Attack = IAttackSafeDispatcher { contract_address: attack_contract_address };
+        mock_tx_info.account_contract_address = Option::Some(caller());
 
         start_spoof(CheatTarget::All, mock_tx_info);
         Attack.attack().unwrap();
@@ -62,4 +62,6 @@ mod tests {
         assert(attacker_balance == deposit_amount, Errors::ATTACK_FAILED);
         'Excerise Completed!'.print();
     }
+
+    fn caller() -> ContractAddress {}
 }

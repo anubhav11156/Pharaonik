@@ -2,7 +2,6 @@
 mod Trove {
     use core::option::OptionTrait;
     use core::traits::TryInto;
-    use core::debug::PrintTrait;
     use pharaonik::interfaces::ITrove::ITrove;
     use pharaonik::interfaces::IERC20Camel::{IERC20CamelDispatcher, IERC20CamelDispatcherTrait};
     use pharaonik::utils::errors::Errors;
@@ -25,8 +24,6 @@ mod Trove {
         assert(!trove_owner.is_zero(), Errors::ZERO_ADDRESS);
         assert(!wETH_address.is_zero(), Errors::ZERO_ADDRESS);
         self.trove_owner.write(trove_owner);
-        'trove_owner'.print();
-        trove_owner.print();
         self.IERC20Camel.write(IERC20CamelDispatcher { contract_address: wETH_address });
     }
 
@@ -38,7 +35,7 @@ mod Trove {
             self.IERC20Camel.read().transferFrom(sender, this_trove, amount);
         }
 
-        fn withdraw(ref self: ContractState, amount: u256, receiver:ContractAddress) {
+        fn withdraw(ref self: ContractState, amount: u256, receiver: ContractAddress) {
             let caller = get_tx_info().unbox().account_contract_address;
             assert(caller == self.trove_owner.read(), Errors::ONLY_OWNER);
             assert(amount <= self.get_balance(), Errors::INSUFFICIENT_BALANCE);

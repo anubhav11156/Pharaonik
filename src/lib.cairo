@@ -5,9 +5,6 @@ mod excercises {
             mod attack;
         }
     }
-// mod exercise1 {}
-
-// mod exercise2 {}
 }
 
 mod interfaces {
@@ -30,4 +27,3 @@ mod utils {
     pub mod errors;
     pub mod constants;
 }
-

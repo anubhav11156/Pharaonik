@@ -32,9 +32,6 @@ mod Attack {
     #[abi(embed_v0)]
     pub impl Attack of super::IAttack<ContractState> {
         // @todo Complete the below attack fuction to solve this exercise
-        fn attack(ref self: ContractState) -> () {
-            let amount = self.trove.read().get_balance();
-            self.trove.read().withdraw(amount, self.owner.read());
-        }
+        fn attack(ref self: ContractState) -> () {}
     }
 }
