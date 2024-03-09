@@ -2,19 +2,25 @@ pub mod Constants {
     use core::traits::{Into, TryInto};
     use core::starknet::{
         get_caller_address, get_contract_address, ContractAddress, ClassHash,
-        contract_address_to_felt252
+        contract_address_to_felt252, contract_address_const
     };
 
     pub const ETH_SUPPLY: u256 = 100000000000000000000000; // 100000 ETH
 
     pub fn pharaonik_admin() -> ContractAddress {
-        let _pharaonik_admin: ContractAddress = 'PharaonikAdmin'.try_into().unwrap();
-        _pharaonik_admin
+        let pharaonik_admin: ContractAddress =
+            3108212838208404054834537966372198605045806014890484038615249350689380231004
+            .try_into()
+            .unwrap();
+        pharaonik_admin
     }
 
     pub fn alice() -> ContractAddress {
-        let _alice: ContractAddress = 'Alice'.try_into().unwrap();
-        _alice
+        let alice: ContractAddress =
+            1111123838208404789834537966372198605045806014890484038615249350689380231004
+            .try_into()
+            .unwrap();
+        alice
     }
 
     pub fn bob() -> ContractAddress {
@@ -28,7 +34,10 @@ pub mod Constants {
     }
 
     pub fn attacker() -> ContractAddress {
-        let _attacker: ContractAddress = 'Attacker'.try_into().unwrap();
-        _attacker
+        let attacker: ContractAddress =
+            2223423838208404789834537966372198605045806014890484038615249350689380231004
+            .try_into()
+            .unwrap();
+        attacker
     }
 }

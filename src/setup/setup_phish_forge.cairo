@@ -1,21 +1,23 @@
 mod SetupPhishForge {
     use core::array::ArrayTrait;
-    // use snforge_std::PrintTrait;
-    use snforge_std::L1Handler;
-    use snforge_std::L1HandlerTrait;
-    use core::result::ResultTrait;
-    use core::option::OptionTrait;
-    use core::traits::TryInto;
     use starknet::ContractAddress;
-    use starknet::Felt252TryIntoContractAddress;
     use starknet::contract_address_to_felt252;
-    use starknet::contract_address_const;
-    use snforge_std::{
-        declare, ContractClass, ContractClassTrait, start_prank, stop_prank, CheatTarget
-    };
-    use snforge_std::stop_warp;
-    use snforge_std::start_warp;
-
     use pharaonik::interfaces::IERC20Camel::{IERC20CamelDispatcher, IERC20CamelDispatcherTrait};
     use pharaonik::utils::constants::Constants;
+    use pharaonik::setup::setup::Setup::{
+        init_setup, declare_contract, deploy_contract, fund_tokens
+    };
+
+    fn setup_phish_forge() -> (ContractAddress, ContractAddress) {
+        let wETH_address = init_setup();
+        let alice = Constants::alice();
+        let amount = 10000000000000000000; // 10 ETH
+        fund_tokens(wETH_address, alice, amount);
+        let mut call_data = ArrayTrait::new();
+        call_data.append(contract_address_to_felt252(alice));
+        call_data.append(contract_address_to_felt252(wETH_address));
+        let trove_class = declare_contract('Trove');
+        let trove_address = deploy_contract(trove_class, call_data);
+        (wETH_address, trove_address)
+    }
 }

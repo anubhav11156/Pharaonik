@@ -13,6 +13,7 @@ starknet = ">=2.4.3"
 [[target.starknet-contract]]
 casm = true
 sierra = true
+allowed-libfuncs-list.name = "experimental"
 
 [scripts]
 test = "snforge test"

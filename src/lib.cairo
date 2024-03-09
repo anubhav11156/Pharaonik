@@ -2,6 +2,7 @@ mod excercises {
     mod excercise0 {
         mod phish_forge {
             mod trove;
+            mod attack;
         }
     }
 // mod exercise1 {}
@@ -14,6 +15,7 @@ mod interfaces {
     pub mod IERC20Camel;
     pub mod IStarknetETHBridge;
 }
+
 mod mocks {
     pub mod starknet_eth_bridge;
     pub mod erc20_camel;
@@ -21,6 +23,7 @@ mod mocks {
 
 mod setup {
     mod setup;
+    mod setup_phish_forge;
 }
 
 mod utils {
