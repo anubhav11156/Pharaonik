@@ -11,8 +11,6 @@ mod SubDefiVault {
     impl ERC20Impl = ERC20Component::ERC20Impl<ContractState>;
     #[abi(embed_v0)]
     impl ERC20MetadataImpl = ERC20Component::ERC20MetadataImpl<ContractState>;
-
-
     impl ERC20InternalImpl = ERC20Component::InternalImpl<ContractState>;
 
     use core::traits::{TryInto, Into};
@@ -39,71 +37,64 @@ mod SubDefiVault {
 
     #[derive(Drop, starknet::Event)]
     struct Deposit {
-        sender: ContractAddress,
-        owner: ContractAddress,
+        receiver: ContractAddress,
         assets: u256,
         shares: u256,
     }
 
     #[derive(Drop, starknet::Event)]
     struct Withdraw {
-        sender: ContractAddress,
         receiver: ContractAddress,
-        owner: ContractAddress,
         assets: u256,
         share: u256,
-        batchId: u128,
     }
 
     #[storage]
     struct Storage {
-        // components
         #[substorage(v0)]
         src5: SRC5Component::Storage,
         #[substorage(v0)]
         erc20: ERC20Component::Storage,
+        admin: ContractAddress,
         underlying_asset: ContractAddress,
+        rate: u256,
     }
 
     #[constructor]
     fn constructor(
-        ref self: ContractState, name: felt252, symbol: felt252, _underlying_asset: ContractAddress,
+        ref self: ContractState,
+        name: felt252,
+        symbol: felt252,
+        _admin: ContractAddress,
+        _underlying_asset: ContractAddress,
     ) {
         assert(!_underlying_asset.is_zero(), Errors::ZERO_ADDRESS);
+        assert(!_admin.is_zero(), Errors::ZERO_ADDRESS);
         self.underlying_asset.write(_underlying_asset);
+        self.admin.write(_admin);
     }
 
-    #[external(v0)]
+    #[abi(embed_v0)]
     impl SubDefiVault of ISubDefiVault<ContractState> {
         fn deposit(
             ref self: ContractState,
-            amount: u256,
+            assets: u256,
             receiver: ContractAddress,
             market: ContractAddress
         ) -> u256 {
-            assert(amount > 0, Errors::ZERO_AMOUNT);
+            assert(assets > 0, Errors::ZERO_AMOUNT);
             assert(!receiver.is_zero(), Errors::ZERO_ADDRESS);
-            let shares = self.preview_deposit(amount);
-            self._deposit(receiver, market, amount, shares);
+            let shares = self.preview_deposit(assets);
+            self._deposit(receiver, market, assets, shares);
             return shares;
         }
 
         fn redeem(
             ref self: ContractState, shares: u256, receiver: ContractAddress, owner: ContractAddress
         ) -> u256 {
-            self.reentrancyguard.start();
-            self.pausable.assert_not_paused();
-            assert(shares <= self.max_redeem(owner), Errors::INVALID_SHARES);
-            let fees = self._collect_fees(owner, shares, UNSTAKE);
-            let _shares = shares - fees;
-            let _assets = self.preview_redeem(_shares);
-            if (_assets <= self.vault_balance()) {
-                self._immediate_withdraw(get_caller_address(), receiver, owner, _assets, _shares);
-            } else {
-                self._withdraw(get_caller_address(), receiver, owner, _assets, _shares);
-            }
-            self.reentrancyguard.end();
-            return _assets;
+            let assets = self.preview_redeem(shares);
+            self._withdraw(receiver, assets, shares);
+            return assets;
         }
 
         fn preview_deposit(self: @ContractState, assets: u256) -> u256 {
@@ -115,85 +106,71 @@ mod SubDefiVault {
         }
 
         fn convert_to_shares(self: @ContractState, assets: u256) -> u256 {
-            let supply: u256 = self.erc20.total_supply();
-            if (assets == 0 || supply == 0) {
-                assets
-            } else {
-                mul_div_down(assets, supply, self.total_assets())
-            }
+            0
         }
 
         fn convert_to_assets(self: @ContractState, shares: u256) -> u256 {
-            let supply: u256 = self.erc20.total_supply();
-            if (supply == 0) {
-                shares
-            } else {
-                mul_div_down(shares, self.total_assets(), supply)
-            }
+            0
         }
 
         fn asset(self: @ContractState) -> ContractAddress {
             self.underlying_asset.read()
         }
+
+        fn get_rate(self: @ContractState) -> u256 {
+            self.rate.read()
+        }
+
+        fn update_rate(ref self: ContractState, rate: u256) {
+            self._assert_only_admin();
+            assert(!rate.is_zero(), 'Zero rate');
+            let old_rate = self.get_rate();
+            assert(rate != old_rate, 'rate not new');
+            self.rate.write(rate);
+        }
+
+        fn update_admin(ref self: ContractState, new_admin: ContractAddress) {
+            self._assert_only_admin();
+            assert(!new_admin.is_zero(), Errors::ZERO_ADDRESS);
+            self.admin.write(new_admin);
+        }
     }
 
     #[generate_trait]
-    impl VaultInternal of VaultInternalTrait {
-        // self._deposit(receiver, market, amount, shares); 
+    impl SubDefiVaultInternal of SubDefiVaultInternalTrait {
         fn _deposit(
             ref self: ContractState,
             receiver: ContractAddress,
             market: ContractAddress,
-            amount: u256,
+            assets: u256,
             shares: u256
         ) {
             self.erc20._mint(receiver, shares);
+            let asset_balance_before = self._vault_asset_balance();
             IERC20CamelDispatcher { contract_address: market }
-                .transferFrom(receiver, get_contract_address(), amount);
-
-            self
-                .emit(
-                    Deposit {
-                        sender: receiver,
-                        owner: receiver,
-                        assets: amount,
-                        shares: shares,
-                    }
-                );
+                .transferFrom(receiver, get_contract_address(), assets);
+            let asset_balance_after = self._vault_asset_balance();
+            assert(asset_balance_after == asset_balance_before + assets, 'Invalid after balance');
+            self.emit(Deposit { receiver: receiver, assets: assets, shares: shares, });
         }
 
         fn _withdraw(
-            ref self: ContractState,
-            caller: ContractAddress,
-            receiver: ContractAddress,
-            owner: ContractAddress,
-            assets: u256,
-            shares: u256,
+            ref self: ContractState, receiver: ContractAddress, assets: u256, shares: u256,
         ) {
-            if (caller != owner) {
-                self.erc20._spend_allowance(owner, caller, shares);
-            }
-
-            // Shares transfered to vault contract, which once the vault contract recieves funds
-            // will send ETH to respective users and burn the shares
-            self.erc20._transfer(owner, get_contract_address(), shares);
-
-            self
-                .emit(
-                    Withdraw {
-                        sender: caller,
-                        receiver: receiver,
-                        owner: owner,
-                        assets: assets,
-                        share: shares,
-                        batchId: current_batch_id,
-                    }
-                );
+            self.erc20._burn(receiver, shares);
+            IERC20CamelDispatcher { contract_address: self.asset() }
+                .transferFrom(get_contract_address(), receiver, assets);
+            self.emit(Withdraw { receiver: receiver, assets: assets, share: shares, });
         }
 
+        fn _vault_asset_balance(self: @ContractState) -> u256 {
+            let balance = IERC20CamelDispatcher { contract_address: self.asset() }
+                .balanceOf(get_contract_address());
+            balance
+        }
 
-        fn _get_exchange_rate(self: @ContractState) -> ExchangeRateData {
-            self._hashstack_config().get_exchange_rate_data()
+        fn _assert_only_admin(self: @ContractState) {
+            assert(get_caller_address() == self.admin.read(), 'Caller not admin');
         }
     }
 }

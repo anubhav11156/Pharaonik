@@ -8,6 +8,7 @@ authors = ["Anubhav anubhav11697@gmail.com"]
 
 [dependencies]
 snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry", tag = "v0.18.0" }
+openzeppelin = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", tag = "v0.10.0" }
 starknet = ">=2.4.3"
 
 [[target.starknet-contract]]
