@@ -11,7 +11,6 @@ mod ERC20Camel {
     use core::serde::Serde;
     use core::box::BoxTrait;
     use core::zeroable::Zeroable;
-
     use pharaonik::interfaces::IERC20Camel::IERC20Camel;
 
     #[derive(Drop, starknet::Event)]

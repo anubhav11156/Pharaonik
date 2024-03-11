@@ -6,6 +6,7 @@ pub mod Constants {
     };
 
     pub const ETH_SUPPLY: u256 = 100000000000000000000000; // 100000 ETH
+    pub const DECIMALS: u256 = 1000000000000000000; // 18 decimals
 
     pub fn pharaonik_admin() -> ContractAddress {
         let pharaonik_admin: ContractAddress =

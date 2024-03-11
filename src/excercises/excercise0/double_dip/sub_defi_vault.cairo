@@ -16,6 +16,7 @@ mod SubDefiVault {
     use core::traits::{TryInto, Into};
     use core::array::ArrayTrait;
     use core::zeroable::Zeroable;
+    use core::byte_array::ByteArray;
     use core::starknet::{
         get_caller_address, get_contract_address, ContractAddress, ClassHash,
         contract_address_to_felt252, get_tx_info
@@ -24,7 +25,7 @@ mod SubDefiVault {
     use pharaonik::interfaces::IERC20Camel::{IERC20CamelDispatcher, IERC20CamelDispatcherTrait};
     use pharaonik::utils::math::Math::{mul_div_down, mul_div_up};
     use pharaonik::utils::errors::Errors;
-
+    use pharaonik::utils::constants::Constants;
 
     #[event]
     #[derive(Drop, starknet::Event)]
@@ -63,8 +64,8 @@ mod SubDefiVault {
     #[constructor]
     fn constructor(
         ref self: ContractState,
-        name: felt252,
-        symbol: felt252,
+        _name: ByteArray,
+        _symbol: ByteArray,
         _admin: ContractAddress,
         _underlying_asset: ContractAddress,
     ) {
@@ -72,6 +73,7 @@ mod SubDefiVault {
         assert(!_admin.is_zero(), Errors::ZERO_ADDRESS);
         self.underlying_asset.write(_underlying_asset);
         self.admin.write(_admin);
+        self.erc20.initializer(_name, _symbol);
     }
 
     #[abi(embed_v0)]
@@ -92,6 +94,8 @@ mod SubDefiVault {
         fn redeem(
             ref self: ContractState, shares: u256, receiver: ContractAddress, owner: ContractAddress
         ) -> u256 {
+            assert(shares <= self.erc20.balance_of(receiver), 'Insufficient shares');
+            assert(!receiver.is_zero(), Errors::ZERO_ADDRESS);
             let assets = self.preview_redeem(shares);
             self._withdraw(receiver, assets, shares);
             return assets;
@@ -106,11 +110,13 @@ mod SubDefiVault {
         }
 
         fn convert_to_shares(self: @ContractState, assets: u256) -> u256 {
-            0
+            let rate = (Constants::DECIMALS * Constants::DECIMALS) / self.get_rate();
+            mul_div_down(assets, rate, Constants::DECIMALS)
         }
 
         fn convert_to_assets(self: @ContractState, shares: u256) -> u256 {
-            0
+            let rate = self.get_rate();
+            mul_div_down(shares, rate, Constants::DECIMALS)
         }
 
         fn asset(self: @ContractState) -> ContractAddress {
