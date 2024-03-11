@@ -4,13 +4,21 @@ mod excercises {
             mod trove;
             mod attack;
         }
+
+        mod double_dip {
+            mod sub_defi_router;
+            mod sub_defi_vault;
+            mod attack;
+        }
     }
 }
 
 mod interfaces {
-    pub mod ITrove;
     pub mod IERC20Camel;
     pub mod IStarknetETHBridge;
+    pub mod ITrove;
+    pub mod ISubDefiRouter;
+    pub mod ISubDefiVault;
 }
 
 mod mocks {
@@ -21,9 +29,11 @@ mod mocks {
 mod setup {
     mod setup;
     mod setup_phish_forge;
+    mod setup_double_dip;
 }
 
 mod utils {
     pub mod errors;
     pub mod constants;
+    pub mod math;
 }
