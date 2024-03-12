@@ -24,14 +24,12 @@ pub mod Constants {
         alice
     }
 
-    pub fn bob() -> ContractAddress {
-        let _bob: ContractAddress = 'Bob'.try_into().unwrap();
-        _bob
-    }
-
-    pub fn jhon() -> ContractAddress {
-        let _jhon: ContractAddress = 'Jhon'.try_into().unwrap();
-        _jhon
+    pub fn sub_defi_admin() -> ContractAddress {
+        let sub_defi_admin: ContractAddress =
+            1111123838208409087634537966372198605045806014890484038615249350689380231004
+            .try_into()
+            .unwrap();
+        sub_defi_admin
     }
 
     pub fn attacker() -> ContractAddress {

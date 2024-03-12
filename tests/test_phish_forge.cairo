@@ -6,29 +6,29 @@ mod TestPhishForge {
     use core::traits::TryInto;
     use starknet::{contract_address_to_felt252, ContractAddress};
     use snforge_std::{
-        declare, ContractClass, ContractClassTrait, start_prank, stop_prank, start_spoof,
-        stop_spoof, CheatTarget
+        declare, ContractClass, ContractClassTrait, start_prank, stop_prank, CheatTarget
     };
-    use snforge_std::cheatcodes::tx_info::TxInfoMockTrait;
     use pharaonik::interfaces::IERC20Camel::{
         IERC20CamelSafeDispatcher, IERC20CamelSafeDispatcherTrait
     };
-    use pharaonik::interfaces::ITrove::{ITroveSafeDispatcher, ITroveSafeDispatcherTrait};
-    use pharaonik::excercises::excercise0::phish_forge::attack::{
+    use pharaonik::interfaces::ISubDefiRouter::{
+        ISubDefiRouterDispatcher, ISubDefiRouterDispatcherTrait
+    };
+    use pharaonik::excercises::excercise0::double_dip::attack::{
         IAttackSafeDispatcher, IAttackSafeDispatcherTrait
     };
     use pharaonik::utils::constants::Constants;
     use pharaonik::utils::errors::Errors;
     use pharaonik::setup::setup::Setup::{declare_contract, deploy_contract};
-    use pharaonik::setup::setup_phish_forge::SetupPhishForge::{setup_phish_forge};
+    use pharaonik::setup::setup_double_dip::SetupDoubleDip::{setup_double_dip};
 
     #[test]
     #[feature("safe_dispatcher")]
     fn test_exploit() {
         // Alice deposit action
-        let (wETH_address, trove_address) = setup_phish_forge();
+        let (wETH_address, router_address, eth_vault_address) = setup_phish_forge();
         let wETH = IERC20CamelSafeDispatcher { contract_address: wETH_address };
-        let Trove = ITroveSafeDispatcher { contract_address: trove_address };
+        let SubDefiRouter = ISubDefiRouterDispatcher { contract_address: router_address };
         let alice = Constants::alice();
         let deposit_amount: u256 = 5000000000000000000; // 5 ETH
         start_prank(CheatTarget::One(wETH_address), alice);
