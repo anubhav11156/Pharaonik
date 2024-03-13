@@ -109,17 +109,9 @@ mod FalseERC20 {
             recipient: ContractAddress,
             amount: u256
         ) -> bool {
-            let call_count: u32 = self.total_call_count.read();
-            if (call_count == 0) {
-                // First call
-                self.total_call_count.write(call_count + 1);
-                ISubDefiVaultDispatcher { contract_address: self.wETH_vault.read() }
-                    .deposit(amount, self.owner.read(), get_contract_address());
-            } else if (call_count == 1) {
-                // Second call
-                IERC20CamelDispatcher { contract_address: self.wETH.read() }
-                    .transfer(self.wETH_vault.read(), 5000000000000000000);
-            }
+            let caller = get_caller_address();
+            self._spend_allowance(sender, caller, amount);
+            self._transfer(sender, recipient, amount);
             true
         }
 
