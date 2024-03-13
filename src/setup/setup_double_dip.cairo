@@ -1,4 +1,5 @@
 mod SetupDoubleDip {
+    use core::debug::PrintTrait;
     use core::array::ArrayTrait;
     use starknet::ContractAddress;
     use starknet::contract_address_to_felt252;
@@ -29,8 +30,6 @@ mod SetupDoubleDip {
     fn setup_eth_vault(wETH: ContractAddress) -> ContractAddress {
         let sub_defi_admin = Constants::sub_defi_admin();
         let mut eth_vault_call_data = ArrayTrait::new();
-        eth_vault_call_data.append('sdETH');
-        eth_vault_call_data.append('sdETH');
         eth_vault_call_data.append(contract_address_to_felt252(sub_defi_admin));
         eth_vault_call_data.append(contract_address_to_felt252(wETH));
         let eth_vault_class = declare_contract('SubDefiVault');

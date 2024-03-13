@@ -63,17 +63,13 @@ mod SubDefiVault {
 
     #[constructor]
     fn constructor(
-        ref self: ContractState,
-        _name: ByteArray,
-        _symbol: ByteArray,
-        _admin: ContractAddress,
-        _underlying_asset: ContractAddress,
+        ref self: ContractState, _admin: ContractAddress, _underlying_asset: ContractAddress,
     ) {
         assert(!_underlying_asset.is_zero(), Errors::ZERO_ADDRESS);
         assert(!_admin.is_zero(), Errors::ZERO_ADDRESS);
         self.underlying_asset.write(_underlying_asset);
         self.admin.write(_admin);
-        self.erc20.initializer(_name, _symbol);
+        self.erc20.initializer("sdETH", "sdETH");
     }
 
     #[abi(embed_v0)]

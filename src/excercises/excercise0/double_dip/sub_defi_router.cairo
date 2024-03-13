@@ -1,5 +1,6 @@
 #[starknet::contract]
 mod SubDefiRouter {
+    use core::debug::PrintTrait;
     use core::traits::{TryInto, Into};
     use core::array::ArrayTrait;
     use core::zeroable::Zeroable;
@@ -56,6 +57,7 @@ mod SubDefiRouter {
     #[constructor]
     fn constructor(ref self: ContractState, _admin: ContractAddress) {
         assert(!_admin.is_zero(), Errors::ZERO_ADDRESS);
+        self.admin.write(_admin);
     }
 
     #[abi(embed_v0)]
@@ -85,10 +87,13 @@ mod SubDefiRouter {
             ref self: ContractState, market: ContractAddress, market_vault: ContractAddress
         ) {
             self._assert_only_admin();
+
             assert(!market.is_zero(), Errors::ZERO_ADDRESS);
             assert(!market_vault.is_zero(), Errors::ZERO_ADDRESS);
+
             let market_id: u32 = self.market_id.read();
             self.market_id.write(market_id + 1);
+
             self
                 .market_id_to_market
                 .write(

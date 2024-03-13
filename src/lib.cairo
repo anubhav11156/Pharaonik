@@ -8,7 +8,7 @@ mod excercises {
         mod double_dip {
             mod sub_defi_router;
             mod sub_defi_vault;
-            mod attack;
+            mod false_erc_20;
         }
     }
 }
