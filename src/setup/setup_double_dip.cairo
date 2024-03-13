@@ -12,6 +12,8 @@ mod SetupDoubleDip {
         let wETH_address = init_setup();
         let router = setup_router();
         let eth_vault = setup_eth_vault(wETH_address);
+        let attacker = Constants::attacker();
+        fund_tokens(wETH_address, attacker, 5000000000000000000); // 5 ETH
         (wETH_address, router, eth_vault)
     }
 

