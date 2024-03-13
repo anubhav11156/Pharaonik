@@ -35,6 +35,6 @@ The exercises can be of three difficulty levels: Easy, Medium, and Hard. Each pr
 - Need more help? [Contact me](https://twitter.com/subsix_)
 ## Disclaimer
 - The Cairo code, practices, and patterns provided in this repository are for educational purposes only. They are not intended for use in production environments.
-- This repo is under constant upgrade, more excersises are geing added!
+- This repo is under constant upgrade, more excersises are being added!
 
 
