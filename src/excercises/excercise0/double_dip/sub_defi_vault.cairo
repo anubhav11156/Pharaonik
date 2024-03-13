@@ -13,6 +13,7 @@ mod SubDefiVault {
     impl ERC20MetadataImpl = ERC20Component::ERC20MetadataImpl<ContractState>;
     impl ERC20InternalImpl = ERC20Component::InternalImpl<ContractState>;
 
+    use core::debug::PrintTrait;
     use core::traits::{TryInto, Into};
     use core::array::ArrayTrait;
     use core::zeroable::Zeroable;
@@ -121,6 +122,10 @@ mod SubDefiVault {
 
         fn get_rate(self: @ContractState) -> u256 {
             self.rate.read()
+        }
+
+        fn share_balance(self: @ContractState, user: ContractAddress) -> u256 {
+            self.erc20.balance_of(user)
         }
 
         fn update_rate(ref self: ContractState, rate: u256) {

