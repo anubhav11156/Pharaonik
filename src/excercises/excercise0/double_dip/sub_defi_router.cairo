@@ -87,10 +87,8 @@ mod SubDefiRouter {
             ref self: ContractState, market: ContractAddress, market_vault: ContractAddress
         ) {
             self._assert_only_admin();
-
             assert(!market.is_zero(), Errors::ZERO_ADDRESS);
             assert(!market_vault.is_zero(), Errors::ZERO_ADDRESS);
-
             let market_id: u32 = self.market_id.read();
             self.market_id.write(market_id + 1);
 

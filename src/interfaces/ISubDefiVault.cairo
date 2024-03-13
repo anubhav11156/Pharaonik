@@ -12,6 +12,7 @@ trait ISubDefiVault<TContractState> {
     fn asset(self: @TContractState) -> ContractAddress;
     fn get_rate(self: @TContractState) -> u256;
     fn share_balance(self: @TContractState, user: ContractAddress) -> u256;
+    fn approve_share(ref self: TContractState, spender: ContractAddress, amount: u256);
     fn preview_deposit(self: @TContractState, assets: u256) -> u256;
     fn preview_redeem(self: @TContractState, shares: u256) -> u256;
     fn convert_to_assets(self: @TContractState, shares: u256) -> u256;

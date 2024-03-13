@@ -92,8 +92,11 @@ mod SubDefiVault {
             ref self: ContractState, shares: u256, receiver: ContractAddress, owner: ContractAddress
         ) -> u256 {
             assert(shares <= self.erc20.balance_of(receiver), 'Insufficient shares');
+
             assert(!receiver.is_zero(), Errors::ZERO_ADDRESS);
+
             let assets = self.preview_redeem(shares);
+
             self._withdraw(receiver, assets, shares);
             return assets;
         }
@@ -126,6 +129,10 @@ mod SubDefiVault {
 
         fn share_balance(self: @ContractState, user: ContractAddress) -> u256 {
             self.erc20.balance_of(user)
+        }
+
+        fn approve_share(ref self: ContractState, spender: ContractAddress, amount: u256) {
+            self.erc20.approve(spender, amount);
         }
 
         fn update_rate(ref self: ContractState, rate: u256) {
@@ -165,8 +172,9 @@ mod SubDefiVault {
             ref self: ContractState, receiver: ContractAddress, assets: u256, shares: u256,
         ) {
             self.erc20._burn(receiver, shares);
-            IERC20CamelDispatcher { contract_address: self.asset() }
-                .transferFrom(get_contract_address(), receiver, assets);
+
+            IERC20CamelDispatcher { contract_address: self.asset() }.transfer(receiver, assets);
+
             self.emit(Withdraw { receiver: receiver, assets: assets, share: shares, });
         }
 

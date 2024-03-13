@@ -60,7 +60,7 @@ mod TestPhishForge {
 
         let attacker_balance: u256 = wETH.balanceOf(attacker).unwrap();
         assert(attacker_balance == deposit_amount, Errors::ATTACK_FAILED);
-        'Excerise Completed!'.print();
+        'Excercise Completed!'.print();
     }
 
     fn caller() -> ContractAddress {
